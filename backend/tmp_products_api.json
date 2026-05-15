@@ -1,0 +1,1 @@
+{"success":false,"status":"failed","message":"No CSV yet. Run a scrape first (GET /api/products/scrape?url=...)."}
