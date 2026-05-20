@@ -102,10 +102,6 @@ function withTimeout(promise, timeoutMs) {
   ]);
 }
 
-/**
- * Step 1: scrape category, write CSV only (no large JSON body — avoids client timeouts).
- * Client should then call GET /api/products/from-csv to load rows for the UI.
- */
 async function scrapeToCsv(req, res, next) {
   const startedAt = Date.now();
   try {
@@ -161,9 +157,6 @@ async function scrapeToCsv(req, res, next) {
   }
 }
 
-/**
- * Step 2: read latest products.csv and return JSON for the frontend grid.
- */
 async function getProductsFromCsv(_req, res, next) {
   try {
     const { filePath, products, error } = await readLatestProductsCsv();
@@ -204,9 +197,6 @@ async function getProductsFromCsv(_req, res, next) {
   }
 }
 
-/**
- * Legacy: scrape + CSV + return products in one response (large payload; shorter runs only).
- */
 async function getProducts(req, res, next) {
   const startedAt = Date.now();
   try {
@@ -316,8 +306,6 @@ async function getScrapeJobStatus(req, res) {
 }
 
 function downloadLatestCsv(_req, res, next) {
-  // Match the path used by csvGenerator.js: path.join(__dirname, "..", fileName)
-  // Since this is in controllers/, __dirname is backend/controllers, so .. is backend
   const backendDir = path.join(__dirname, "..");
   const filePath = path.join(backendDir, "products.csv");
   if (!fs.existsSync(filePath)) {

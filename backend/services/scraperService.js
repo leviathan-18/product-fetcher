@@ -27,7 +27,6 @@ function emitProgress(onProgress, payload) {
   }
 }
 
-/** Listing pages needed for `limit` products at ~LIST_PAGE_SIZE per page, plus one spare. */
 function getEffectiveMaxPages(limit) {
   const pagesForTarget = Math.ceil(limit / Math.max(LIST_PAGE_SIZE, 1));
   return Math.max(MAX_PAGES, pagesForTarget + 1);
@@ -57,7 +56,6 @@ function buildPageUrlVariants(baseUrl, page) {
   }
 
   const myntra = isMyntraUrl(baseUrl);
-  // Myntra category listings usually paginate with `p=2`, `p=3`, … (page 1 = default URL).
   if (myntra) {
     const primary = new URL(baseUrl);
     primary.searchParams.set("p", String(page));
@@ -97,7 +95,6 @@ function buildPageUrlVariants(baseUrl, page) {
       apply(u);
       urls.push(u.toString());
     } catch (_e) {
-      // skip invalid
     }
   }
 
@@ -194,7 +191,6 @@ async function scrapeViaHiddenApi(categoryUrl, limit) {
       );
 
       const freshCount = countNewVsCatalog(pageProducts, products);
-      // Prefer the URL that yields the most *new* rows (real next listing page), not a duplicate page.
       if (
         freshCount > bestNew ||
         (freshCount === bestNew && pageProducts.length > bestBatch.length)
@@ -224,13 +220,12 @@ async function scrapeViaHiddenApi(categoryUrl, limit) {
       continue;
     }
 
-    consecutiveEmptyPages = 0; // Reset counter when we find products
+    consecutiveEmptyPages = 0;
 
     if (page > 1 && bestNew === 0) {
       console.log(
         `[scrape:hidden-api] listing page=${page} no new rows vs catalog from earlier pages, trying more pages...`
       );
-      // Don't break immediately - continue trying other URL variants
     }
 
     const uniqueBefore = products.length;
@@ -246,7 +241,6 @@ async function scrapeViaHiddenApi(categoryUrl, limit) {
       console.log(
         `[scrape:hidden-api] listing page=${page} merged batch added no unique products, continuing to try more...`
       );
-      // Continue to next page instead of breaking - may find duplicates initially but new products later
     }
 
     await delay(PAGE_DELAY_MS);
@@ -275,7 +269,7 @@ async function autoScrollPage(page) {
         }, 8000);
       });
     },
-    { timeout: 120000 } // 2 minutes for page scroll
+    { timeout: 120000 }
   );
 }
 
@@ -376,7 +370,7 @@ async function extractProductCardsFromDom(page) {
       };
     });
     },
-    { timeout: 120000 } // 2 minutes for DOM extraction
+    { timeout: 120000 }
   );
 }
 
@@ -394,8 +388,7 @@ async function scrapeViaPuppeteer(categoryUrl, limit) {
     let merged = [];
     const pageCap = getEffectiveMaxPages(limit);
     let consecutiveEmptyPages = 0;
-    const maxConsecutiveEmpty = 3; // Allow up to 3 consecutive pages with no new products before stopping
-
+  const maxConsecutiveEmpty = 3;
     for (let pageNum = 1; pageNum <= pageCap && merged.length < limit; pageNum += 1) {
       const urlsToTry =
         pageNum === 1
@@ -408,7 +401,7 @@ async function scrapeViaPuppeteer(categoryUrl, limit) {
       for (const visitUrl of urlsToTry) {
         await page.goto(visitUrl, {
           waitUntil: "domcontentloaded",
-          timeout: 60000, // 60 seconds for page load
+          timeout: 60000,
         });
         console.log(
           `[scrape:puppeteer] listing page=${pageNum}/${pageCap} opened url=${visitUrl}`
@@ -452,7 +445,6 @@ async function scrapeViaPuppeteer(categoryUrl, limit) {
           `[scrape:puppeteer] listing page=${pageNum} no new products (${consecutiveEmptyPages}/${maxConsecutiveEmpty} empty pages)`
         );
         
-        // Only stop if we've had too many consecutive empty pages
         if (consecutiveEmptyPages >= maxConsecutiveEmpty) {
           console.log(
             `[scrape:puppeteer] reached ${maxConsecutiveEmpty} consecutive empty pages, stopping`
@@ -460,12 +452,11 @@ async function scrapeViaPuppeteer(categoryUrl, limit) {
           break;
         }
         
-        // Continue trying if we haven't reached the product limit yet
         await delay(PAGE_DELAY_MS);
         continue;
       }
 
-      consecutiveEmptyPages = 0; // Reset counter when we find new products
+      consecutiveEmptyPages = 0;
       const before = merged.length;
       merged.push(...roundNew);
       merged = deduplicateProducts(merged);
@@ -531,10 +522,8 @@ async function extractWplusPageData(page) {
     function extractImage(node) {
       if (!node) return "";
       
-      // Try multiple image sources within the node
       const allImgs = node.querySelectorAll("img");
       for (const img of allImgs) {
-        // Check various image attributes
         let src = img.getAttribute("src") || 
                   img.getAttribute("data-src") || 
                   img.getAttribute("data-lazy-src") ||
@@ -546,7 +535,6 @@ async function extractWplusPageData(page) {
         }
       }
       
-      // Try background-image style on any element in the card
       const allStyledElements = node.querySelectorAll("[style*='background-image'], [style*='backgroundImage']");
       for (const el of allStyledElements) {
         const style = el.getAttribute("style") || "";
@@ -556,7 +544,6 @@ async function extractWplusPageData(page) {
         }
       }
       
-      // Try picture/source elements
       const picture = node.querySelector("picture");
       if (picture) {
         const source = picture.querySelector("source");
@@ -706,7 +693,6 @@ function parseJsonLdBlocks(html) {
         blocks.push(parsed);
       }
     } catch (_error) {
-      // ignore invalid JSON-LD blocks
     }
   }
   return blocks;
@@ -1169,7 +1155,6 @@ async function scrapeProducts(categoryUrl, limit = 400, options = {}) {
       return wplusProducts.slice(0, limit);
     }
 
-    // First try hidden API scraping because it is faster and more reliable.
     const apiProducts = await scrapeViaHiddenApi(categoryUrl, limit);
 
     if (apiProducts.length) {
@@ -1194,7 +1179,6 @@ async function scrapeProducts(categoryUrl, limit = 400, options = {}) {
       return apiProducts.slice(0, limit);
     }
 
-    // Fallback to browser automation for dynamic websites.
     console.log("[scrape:fallback] switching to puppeteer");
     const browserProducts = await scrapeViaPuppeteer(categoryUrl, limit);
     if (!browserProducts.length) {

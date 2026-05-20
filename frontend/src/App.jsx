@@ -110,7 +110,6 @@ function App() {
       setStatusText("Failed");
       setLoading(false);
     } finally {
-      // keep loading true while the job is running; polling will stop it on completion/failure
     }
   }, [url]);
 

@@ -1,7 +1,6 @@
 import UrlInputForm from "../components/UrlInputForm";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
-//import DashboardStats from "../components/DashboardStats";
 import ProductGrid from "../components/ProductGrid";
 import ProductGridSkeleton from "../components/ProductGridSkeleton";
 import Navbar from "../components/Navbar";

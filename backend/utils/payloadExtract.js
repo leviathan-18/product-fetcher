@@ -1,6 +1,3 @@
-/**
- * Extract embedded Next.js payload from HTML (used heavily by Myntra).
- */
 function parseNextDataFromHtml(html) {
   if (typeof html !== "string") {
     return null;
@@ -42,10 +39,6 @@ function looksLikeProductRecord(value) {
   return (hasId || hasCommerceSignals) && hasName;
 }
 
-/**
- * Recursively find the largest array that looks like a product list.
- * Depth-bounded to avoid runaway traversal on huge trees.
- */
 function findBestProductArray(node, depth = 0, best = { length: 0, items: null }) {
   if (!node || depth > 14) {
     return best;
@@ -67,9 +60,6 @@ function findBestProductArray(node, depth = 0, best = { length: 0, items: null }
   return best;
 }
 
-/**
- * Known high-signal paths for ecommerce JSON (Myntra + generic).
- */
 function extractFromKnownPaths(payload) {
   const paths = [
     payload?.products,
@@ -95,9 +85,6 @@ function extractFromKnownPaths(payload) {
   return null;
 }
 
-/**
- * Read pagination hints when the payload includes them (Myntra catalog payloads).
- */
 function readPaginationHint(payload) {
   const blocks = [
     payload?.props?.pageProps?.catalogSSR?.pagination,
